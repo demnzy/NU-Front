@@ -4,6 +4,7 @@ from src.signup import Signup_view
 
 def main(page: ft.Page):
     page.banner = None 
+    page.theme_mode = ft.ThemeMode.LIGHT
     
     page.views.clear()
     page.title = "Nu-age"

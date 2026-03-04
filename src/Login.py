@@ -117,16 +117,10 @@ def login_view(page: ft.Page):
                 height=40
             ),
                 password]),
-                ft.Row(controls=[ft.Container(width=37),
-                    ft.Column(controls=[
+                ft.Row(controls=[ft.Text("  "),
                         ft.TextButton(content="Forgot Password"),
-                        
-                    ],horizontal_alignment=ft.CrossAxisAlignment.START),
-                    ft.Column(controls=[
-                        ft.TextButton(content="Sign Up", on_click=lambda _: page.go("/signup")),
-                        
-                    ],horizontal_alignment=ft.CrossAxisAlignment.END)]),
-                ft.Container(expand=True),
+                        ft.TextButton(content="Create an Account", on_click=lambda _: page.go("/signup")),
+                 ]),
                 Submit
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
