@@ -1,5 +1,7 @@
 import flet as ft
 from src.requests.auth import signup_request
+from src.components.landing_navbar import get_landing_appbar
+import re
 
 def Signup_view(page: ft.Page):
     is_processing = False
@@ -7,7 +9,6 @@ def Signup_view(page: ft.Page):
     custom_message = ft.Text("", size=12)
     validation_error = ft.Text("", color=ft.Colors.RED_700, size=12, weight=ft.FontWeight.W_500)
 
-    # 1. Responsive width logic
     def get_container_width():
         return min(page.width * 0.95, 450) if page.width > 0 else 400
 
@@ -25,9 +26,12 @@ def Signup_view(page: ft.Page):
         all_filled = all(f and f.strip() for f in fields)
         passwords_match = password.value == confirm_password.value
         terms_accepted = terms_checkbox.value
+        email_check=re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email.value)
 
         if not all_filled:
             validation_error.value = "All fields are required."
+        elif not email_check:
+            validation_error.value = "Please enter a valid email address."
         elif not passwords_match:
             validation_error.value = "Passwords do not match."
         elif not terms_accepted:
@@ -35,12 +39,12 @@ def Signup_view(page: ft.Page):
         else:
             validation_error.value = ""
 
-        Submit.disabled = not (all_filled and passwords_match and terms_accepted)
+        Submit.disabled = not (all_filled and passwords_match and terms_accepted and email_check)
         page.update()
         
     def handle_action_click(e: ft.Event[ft.CupertinoDialogAction]):
         page.pop_dialog()
-        page.go("/") # Ensure this matches your login route in main.py
+        page.go("/") 
 
     async def handle_signup(e):
         nonlocal is_processing
@@ -93,12 +97,9 @@ def Signup_view(page: ft.Page):
         actions=[ft.CupertinoDialogAction(content=ft.Text("Ok", color="#009787"), on_click=lambda e: page.pop_dialog())],
     )
 
-    # Input Fields
-# --- Updated Input Fields (Removing fixed 360 width) ---
     first_name = ft.TextField(label="First Name", expand=1, height=40, text_size=13, on_change=validate_inputs)
     last_name = ft.TextField(label="Last Name", expand=1, height=40, text_size=13, on_change=validate_inputs)
     
-    # We use expand=True so they fit perfectly inside the container regardless of phone size
     email = ft.TextField(label="Email", expand=True, height=40, text_size=13, on_change=validate_inputs)
     username = ft.TextField(label="Username", expand=True, height=40, text_size=13, on_change=validate_inputs)
     password = ft.TextField(label="Password", password=True, can_reveal_password=True, expand=True, height=40, text_size=13, on_change=validate_inputs)
@@ -152,31 +153,19 @@ def Signup_view(page: ft.Page):
             tight=True,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
-    )
+            )
 
-    # Return view with scrollable background column for keyboard support
-# Ensure this is at the very end of your Signup_view function
     return ft.View(
         route="/signup",
         bgcolor="#009787",
-        padding=0,
+        # 1. Centers the form in the remaining space beneath the AppBar
+        vertical_alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        padding=20,
+        scroll=ft.ScrollMode.AUTO,
         controls=[
-            # 1. SafeArea prevents the notch from cutting off your logo
-            ft.SafeArea(
-                content=ft.Column(
-                    controls=[
-                        # 2. These Containers act as "Springs" to force the form to the middle
-                        ft.Container(expand=True), 
-                        Signup_form,
-                        ft.Container(expand=True),
-                    ],
-                    # 3. Force the Column to be as big as the screen
-                    expand=True,
-                    width=page.width,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                ),
-                expand=True,
-            )
+            # 2. Simplified controls list: just the form
+            Signup_form,
         ],
+        appbar=get_landing_appbar(page)
     )

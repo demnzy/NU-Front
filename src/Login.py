@@ -1,48 +1,71 @@
 import flet as ft
 from src.requests.auth import login_request
+import re
+from src.components.landing_navbar import get_landing_appbar
 def login_view(page: ft.Page):
     is_processing = False
-    custom_message=ft.Text("", size=14)
-    
+    custom_message=ft.Text("")
+    validation_error = ft.Text("", color=ft.Colors.RED_700, size=12, weight=ft.FontWeight.W_500)
     def handle_action_click(e: ft.Event[ft.CupertinoDialogAction]):
         page.pop_dialog()
+        page.go("/dashboard")
+        
+    def validate_inputs(e):
+        fields = [
+            email.value, password.value
+        ]
+        all_filled = all(f and f.strip() for f in fields)
+        email_check=re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email.value)
 
-    cupertino_alert_dialog = ft.CupertinoAlertDialog(
-        title=ft.Row(controls=[ft.Text("Login Successful!", size =20),ft.Icon(ft.Icons.CHECK, color="#009787")]),
+        if not all_filled:
+            validation_error.value = "         All fields are required."
+        elif not email_check:
+            validation_error.value = "         Please enter a valid email address."
+        else:
+            validation_error.value = ""
+
+        Submit.disabled = not (all_filled and email_check)
+        page.update()
+
+    cupertino_alert_dialog = ft.AlertDialog(
+        title=ft.Row(
+            controls=[
+                ft.Text("Login Successful!"),
+                ft.Icon(ft.Icons.CHECK, color="#009787")
+            ],
+            alignment=ft.MainAxisAlignment.START,
+        ),
+        content=ft.Text("Welcome back to Nu-age."),
+        
         actions=[
-            ft.CupertinoDialogAction(
-                content=ft.Text("Ok", color="#009787"),
-                destructive=True,
+            # Standard Material TextButton instead of CupertinoAction
+            ft.TextButton(
+                content=ft.Text("Ok", color="#009787", weight=ft.FontWeight.BOLD),
                 on_click=handle_action_click,
             ),
         ],
+ 
+        actions_alignment=ft.MainAxisAlignment.END,
     )
     
-    User_Not_found = ft.CupertinoAlertDialog(
-        title=ft.Row(controls=[ft.Text("Login Failed!", size =20), ft.Icon(ft.Icons.CLOSE, color="#009787")]),
+    User_Not_found = ft.AlertDialog(
+        title=ft.Row(
+            controls=[
+                ft.Text("Login Failed!"), 
+                ft.Icon(ft.Icons.CLOSE, color=ft.Colors.RED_700) # Switched to red for a clearer error signal
+            ],
+            alignment=ft.MainAxisAlignment.START,
+        ),
         content=custom_message,
         actions=[
-            ft.CupertinoDialogAction(
+            ft.TextButton(
                 content=ft.Text("Ok", color="#009787"),
-                destructive=True,
-                on_click=handle_action_click,
+                on_click=lambda e: page.pop_dialog(), # Usually you just want to close the error
             ),
         ],
+        actions_alignment=ft.MainAxisAlignment.END,
     )
 
-
-
-    def validate_inputs(e):
-        password_value = password.value.strip()
-        email_value = email.value.strip()
-        
-        
-        if not (email_value and password_value):
-            Submit.disabled = True
-            page.update()
-        else:
-            Submit.disabled = False
-            page.update()
     
     async def handle_submit(e):
         nonlocal is_processing
@@ -58,8 +81,11 @@ def login_view(page: ft.Page):
         try:
             status,data = await login_request(email.value, password.value)   
             if status == 200:
+                token = data.get("access_token")
+                await page.shared_preferences.set("auth_token", token)
                 Submit.bgcolor = "#009787" 
                 page.show_dialog(cupertino_alert_dialog)
+
             elif status == 404:
                 custom_message.value="This account does not exist. Please check your email and try again."
                 page.update()
@@ -124,7 +150,8 @@ def login_view(page: ft.Page):
                 Submit
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=35
+            spacing=30,
+            tight=True
         )
     )
 
@@ -134,4 +161,5 @@ def login_view(page: ft.Page):
         vertical_alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         bgcolor="#009787",
+        appbar=get_landing_appbar(page)
     )

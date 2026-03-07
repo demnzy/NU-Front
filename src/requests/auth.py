@@ -32,3 +32,16 @@ async def signup_request(email: str, username: str, password: str, first_name: s
             json=payload 
         )
         return response.status_code, response.json()
+
+async def get_current_user_request(token: str):
+
+    url = f"{api_url}/users/me" 
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+            return response.status_code, response.json()
+    except Exception as e:
+        print(f"Request Error: {e}")
+        return 500, {"detail": "Connection failed"}
